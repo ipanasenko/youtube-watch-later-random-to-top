@@ -1,0 +1,4 @@
+interface:
+  display_name: "YouTube Watch Later: Random to Top"
+  short_description: "Move random Watch Later videos to the top"
+  default_prompt: "Use $youtube-watch-later-random-to-top to move 5 random videos from my YouTube Watch Later playlist to the top."
