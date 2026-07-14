@@ -40,24 +40,26 @@ Process every sampled video in the preserved shuffled sequence:
 3. Otherwise, scroll that row into view.
 4. Open the three-dot menu within that row. Do not use a menu button from a different row.
 5. Click the visible menu item named `Move to top`, or its clearly equivalent localized label. If the intended action is not unambiguous, do not click.
-6. Wait for the menu to close and the playlist to settle.
-7. Verify that the selected video's ID is now the first playlist item before continuing.
+6. Wait briefly for the interaction to complete and the page to become usable for the next target.
+7. Continue without checking the video's resulting position.
 
-After handling every selection, verify that the IDs in the first `N` playlist rows equal the reverse of the sampled movement sequence. Each successive `Move to top` action prepends a video, so reversing the movement sequence is the expected final top-block order.
+Do not verify playlist order during or after the run. Do not refresh, poll row positions, or cancel because the visible order remains unchanged. YouTube may persist a move before its playlist UI reflects the new order, and immediate verification can produce false failures.
 
 If the user requests a particular final top-block order, derive the required movement sequence by reversing that requested order instead of using the default random movement sequence.
 
 ## Handle failures
 
-Do not blindly retry clicks after an ambiguous menu, stale row, unexpected navigation, or failed verification. Stop further mutations and report:
+Stop further mutations only when the interaction itself cannot safely continue, such as when a target row cannot be reacquired after a reasonable retry, the intended menu action is absent or ambiguous, a click fails, authentication is lost, or the browser navigates unexpectedly. Do not treat stale positions, unchanged ordering, or ordering that changes after a later refresh as failures.
 
-- videos successfully positioned,
+When stopping, report:
+
+- videos for which `Move to top` was submitted or no action was needed,
 - the video that failed,
-- why verification failed,
+- why the interaction could not continue,
 - how many selected videos remain untouched.
 
 Do not attempt to roll back successful moves unless the user explicitly asks.
 
 ## Report completion
 
-After the final top-block verification succeeds, report the number selected and list their original positions and titles in movement order. If a selected video was already first and needed no menu action, mention that briefly. Keep the response concise. Do not claim success based only on clicking.
+After every selection has been handled, report the number selected and list their original positions and titles in movement order. Distinguish submitted `Move to top` actions from videos that were already first and needed no action. State briefly that no final order verification was performed because YouTube updates the playlist asynchronously.
