@@ -4,6 +4,9 @@ Move a random selection of videos from your YouTube Watch Later playlist to the 
 
 The skill uses YouTube's visible playlist controls in Codex's in-app Browser. It loads the complete playlist, samples `N` distinct videos, and moves them through each video's three-dot menu.
 
+<img width="729" height="603" alt="image" src="https://github.com/user-attachments/assets/2afe7a8c-dfcd-43b2-a940-fe70b6d3aacf" />
+
+
 ## Install
 
 ```bash
