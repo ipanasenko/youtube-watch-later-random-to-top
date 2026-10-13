@@ -1,8 +1,22 @@
 {
-  "name": "youtube-watch-later-random-to-top",
+  "name": "@ipanasenko/wl-random",
   "version": "0.2.0",
-  "private": true,
   "description": "Move random videos from your YouTube Watch Later playlist to the top",
+  "keywords": [
+    "youtube",
+    "watch-later",
+    "playlist",
+    "random",
+    "cli"
+  ],
+  "homepage": "https://github.com/ipanasenko/youtube-watch-later-random-to-top#readme",
+  "bugs": "https://github.com/ipanasenko/youtube-watch-later-random-to-top/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ipanasenko/youtube-watch-later-random-to-top.git"
+  },
+  "license": "MIT",
+  "author": "Illia Panasenko",
   "type": "module",
   "bin": {
     "wl-random": "bin/wl-random.mjs"
@@ -16,6 +30,9 @@
   ],
   "engines": {
     "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "test": "node --test"

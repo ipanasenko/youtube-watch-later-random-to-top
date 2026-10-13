@@ -16,14 +16,16 @@ For each video, `wl-random` sends the same request as YouTube's **Move to top** 
 
 ## Install
 
+Run it without installing:
+
 ```bash
-npm install -g github:ipanasenko/youtube-watch-later-random-to-top
+npx @ipanasenko/wl-random 10
 ```
 
-To run it one time without installing:
+Or install the `wl-random` command:
 
 ```bash
-npx github:ipanasenko/youtube-watch-later-random-to-top 10
+npm install -g @ipanasenko/wl-random
 ```
 
 ## Usage
@@ -118,6 +120,20 @@ If a move fails, `wl-random` stops. It shows the moves that worked, the video th
 ```bash
 npm test
 ```
+
+### Releasing
+
+GitHub Actions publishes to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers), so no npm token is stored anywhere. Each release gets a provenance statement that links the package to the commit that built it.
+
+1. Change `version` in `package.json` and merge the change to `main`.
+2. Push a tag with the same version:
+
+   ```bash
+   git tag v0.3.0
+   git push origin v0.3.0
+   ```
+
+The workflow stops if the tag does not match `package.json`.
 
 ## Earlier Versions
 
