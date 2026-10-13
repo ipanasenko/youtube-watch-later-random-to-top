@@ -73,7 +73,8 @@ Chrome encrypts its cookies with a key that it keeps in the macOS Keychain. Each
 
 Enter your password and click **Allow**.
 
-If you click **Always Allow**, macOS stops asking. But then any program on your Mac that uses the `security` command can read this key without a prompt, and that key decrypts all your Chrome cookies. We recommend **Allow**.
+> [!WARNING]
+> Do not click **Always Allow**. If you do, macOS stops asking, and any program on your Mac that uses the `security` command can read this key without a prompt. This key decrypts all your Chrome cookies.
 
 ### Exit codes
 
