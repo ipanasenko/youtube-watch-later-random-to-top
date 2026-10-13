@@ -109,7 +109,7 @@ If a move fails, `wl-random` stops. It shows the moves that worked, the video th
 
 ## Privacy and Risks
 
-`wl-random` uses your signed-in YouTube session. Read this before you use it.
+⚠️ `wl-random` uses your signed-in YouTube session. Read this before you use it.
 
 - **Cookies:** Chrome locks its cookie database, so `wl-random` copies the database to a private temporary folder. It decrypts only the `youtube.com` cookies, and then deletes the copy. It sends the cookies only to `www.youtube.com`. It does not save or log them.
 - **Account access:** these cookies give access to your Google account, not only to YouTube.
