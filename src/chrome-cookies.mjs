@@ -20,6 +20,7 @@ export const CHROME_DIR = join(
 const YOUTUBE_HOSTS = [".youtube.com", "www.youtube.com", "youtube.com"];
 const CHROME_EPOCH_OFFSET_SECONDS = 11_644_473_600;
 const HOST_DIGEST_META_VERSION = 24;
+const STOP_SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"];
 
 export function deriveCookieKey(password) {
   return pbkdf2Sync(password, "saltysalt", 1_003, 16, "sha1");
@@ -57,7 +58,8 @@ export function decryptCookieValue(encrypted, key, hostKey, metaVersion) {
 
 async function readSafeStoragePassword() {
   try {
-    const { stdout } = await execFileAsync("security", [
+    // Use the system tool, not a "security" found through PATH.
+    const { stdout } = await execFileAsync("/usr/bin/security", [
       "find-generic-password",
       "-w",
       "-s",
@@ -73,29 +75,56 @@ async function readSafeStoragePassword() {
   }
 }
 
-async function querySnapshot(profileDir, query) {
-  // Chrome locks its cookie database, so read a private copy.
-  const snapshotDir = await mkdtemp(join(tmpdir(), "wl-cookies-"));
+// Holds stop signals while work runs, then sends them again.
+async function holdingStopSignals(work) {
+  let received = null;
+  const hold = (signal) => {
+    received = signal;
+  };
+
+  for (const signal of STOP_SIGNALS) {
+    process.on(signal, hold);
+  }
 
   try {
-    const snapshot = join(snapshotDir, "Cookies");
-    await copyFile(join(profileDir, "Cookies"), snapshot);
-    await copyFile(
-      join(profileDir, "Cookies-journal"),
-      `${snapshot}-journal`,
-    ).catch(() => {});
+    return await work();
+  } finally {
+    for (const signal of STOP_SIGNALS) {
+      process.off(signal, hold);
+    }
 
-    const { DatabaseSync } = await import("node:sqlite");
-    const db = new DatabaseSync(snapshot);
+    if (received) {
+      process.kill(process.pid, received);
+    }
+  }
+}
+
+export function querySnapshot(profileDir, query) {
+  // A signal would skip the cleanup below and leave the copy on disk.
+  return holdingStopSignals(async () => {
+    // Chrome locks its cookie database, so read a private copy.
+    const snapshotDir = await mkdtemp(join(tmpdir(), "wl-cookies-"));
 
     try {
-      return query(db);
+      const snapshot = join(snapshotDir, "Cookies");
+      await copyFile(join(profileDir, "Cookies"), snapshot);
+      await copyFile(
+        join(profileDir, "Cookies-journal"),
+        `${snapshot}-journal`,
+      ).catch(() => {});
+
+      const { DatabaseSync } = await import("node:sqlite");
+      const db = new DatabaseSync(snapshot);
+
+      try {
+        return query(db);
+      } finally {
+        db.close();
+      }
     } finally {
-      db.close();
+      await rm(snapshotDir, { recursive: true, force: true });
     }
-  } finally {
-    await rm(snapshotDir, { recursive: true, force: true });
-  }
+  });
 }
 
 export async function readYouTubeCookies({ profile = "Default" } = {}) {

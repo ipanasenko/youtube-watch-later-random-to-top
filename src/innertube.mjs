@@ -6,8 +6,18 @@ export const WATCH_LATER_URL = `${YOUTUBE_ORIGIN}/playlist?list=WL`;
 const USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
   + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36";
 
+// Chrome rejects these characters in cookies, so one here means a bad decrypt.
+const CONTROL_CHARACTER = /[\x00-\x08\x0A-\x1F\x7F]/;
+
 export function cookieHeader(cookies) {
-  return Array.from(cookies, ([name, value]) => `${name}=${value}`).join("; ");
+  return Array.from(cookies, ([name, value]) => {
+    // Fetch would quote the whole header, with every cookie, in its error.
+    if (CONTROL_CHARACTER.test(value)) {
+      throw new Error(`cookie ${name} has a control character in its value`);
+    }
+
+    return `${name}=${value}`;
+  }).join("; ");
 }
 
 export function sapisidHash(secret, origin, now = Date.now()) {
@@ -136,7 +146,8 @@ function findMoveToTopEndpoint(renderer) {
     const [action, ...rest] = endpoint.actions ?? [];
 
     if (
-      rest.length === 0
+      endpoint.playlistId === "WL"
+      && rest.length === 0
       && action?.action === "ACTION_MOVE_VIDEO_AFTER"
       && action.setVideoId === renderer.setVideoId
       && !action.movedSetVideoIdPredecessor
@@ -170,8 +181,18 @@ export function parsePlaylistPage(node) {
   return { items, continuation: command?.token ?? null };
 }
 
+// Fetch errors can quote header values, which hold the session cookies.
+async function send(fetchImpl, url, init) {
+  try {
+    return await fetchImpl(url, init);
+  } catch (error) {
+    const code = error.cause?.code ? `: ${error.cause.code}` : "";
+    throw new Error(`request to ${new URL(url).pathname} failed${code}`);
+  }
+}
+
 export async function openWatchLater(cookies, { fetchImpl = fetch } = {}) {
-  const pageResponse = await fetchImpl(WATCH_LATER_URL, {
+  const pageResponse = await send(fetchImpl, WATCH_LATER_URL, {
     headers: {
       cookie: cookieHeader(cookies),
       "user-agent": USER_AGENT,
@@ -222,7 +243,8 @@ export async function openWatchLater(cookies, { fetchImpl = fetch } = {}) {
       headers["x-goog-pageid"] = config.DELEGATED_SESSION_ID;
     }
 
-    const response = await fetchImpl(
+    const response = await send(
+      fetchImpl,
       `${YOUTUBE_ORIGIN}/youtubei/v1/${endpoint}?prettyPrint=false`,
       {
         method: "POST",

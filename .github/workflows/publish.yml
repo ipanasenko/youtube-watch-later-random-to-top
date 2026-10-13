@@ -11,6 +11,8 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Each publish waits for approval in Settings > Environments > npm.
+    environment: npm
     permissions:
       contents: read
       # npm trusted publishing exchanges this OIDC token for a publish token.
