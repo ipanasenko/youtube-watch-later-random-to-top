@@ -137,4 +137,4 @@ The workflow stops if the tag does not match `package.json`.
 
 ## Earlier Versions
 
-Version 0.1 was an agent skill. It clicked through YouTube's interface in Codex's in-app Browser. This CLI replaces it.
+The first version of this project was an agent skill. It clicked through YouTube's interface in Codex's in-app Browser. This CLI replaces it.
