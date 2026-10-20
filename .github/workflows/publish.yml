@@ -32,7 +32,12 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
-      - name: Check that the tag matches the package version
+      # The tag is the only place the version is set; package.json keeps a placeholder.
+      - name: Set the package version from the tag
+        run: npm version --no-git-tag-version --allow-same-version "${GITHUB_REF_NAME#v}"
+
+      # npm normalizes some malformed versions, so v00.2.0 would publish as 0.2.0.
+      - name: Check that the version matches the tag exactly
         run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
 
       - run: npm stage publish
