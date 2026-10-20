@@ -53,6 +53,7 @@ The number after `#` is the position of the video before the move.
 | `--dry-run` | Load the playlist and pick the videos, but move nothing. |
 | `--json` | Print the result as JSON. |
 | `--profile <name>` | The Chrome profile folder to read. The default is `Default`. |
+| `-y`, `--yes` | Do not ask before reading Chrome's key from the Keychain. You need it when stdin is not a terminal. |
 | `-h`, `--help` | Show help. |
 
 ### Chrome profiles
@@ -67,11 +68,13 @@ To find the folder name, open `chrome://version` in that profile. The last part 
 
 ### Keychain prompt
 
-Chrome encrypts its cookies with a key that it keeps in the macOS Keychain. Each time `wl-random` runs, macOS asks:
+Chrome encrypts its cookies with a key that it keeps in the macOS Keychain. `wl-random` reads the key with the macOS `security` tool, so each time `wl-random` runs, macOS asks:
 
 > security wants to use your confidential information stored in "Chrome Safe Storage" in your keychain.
 
-Enter your password and click **Allow**.
+Before this prompt, `wl-random` explains why it needs the key and asks `Continue? [y/N]`. Type `y` to continue. Any other answer stops `wl-random` before it reads the key. To skip this question, use `--yes`.
+
+When macOS asks, enter your password and click **Allow**.
 
 > [!WARNING]
 > Do not click **Always Allow**. If you do, macOS stops asking, and any program on your Mac that uses the `security` command can read this key without a prompt. This key decrypts all your Chrome cookies.
@@ -81,8 +84,8 @@ Enter your password and click **Allow**.
 | Code | Meaning |
 |---|---|
 | `0` | Success. |
-| `1` | An error occurred before any video moved. |
-| `2` | The command is not correct. |
+| `1` | An error occurred, or you answered no, before any video moved. |
+| `2` | The command is not correct, or stdin is not a terminal and `--yes` is missing. |
 | `3` | A move failed. The moves before it were applied. |
 
 ## How It Works

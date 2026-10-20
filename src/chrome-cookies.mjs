@@ -127,7 +127,10 @@ export function querySnapshot(profileDir, query) {
   });
 }
 
-export async function readYouTubeCookies({ profile = "Default" } = {}) {
+export async function readYouTubeCookies({
+  profile = "Default",
+  beforeKeychainRead = async () => {},
+} = {}) {
   if (process.platform !== "darwin") {
     throw new Error("reading Chrome cookies is supported only on macOS");
   }
@@ -165,6 +168,7 @@ export async function readYouTubeCookies({ profile = "Default" } = {}) {
     throw new Error(`no YouTube cookies found in Chrome profile "${profile}"`);
   }
 
+  await beforeKeychainRead();
   const key = deriveCookieKey(await readSafeStoragePassword());
   const cookies = new Map();
 

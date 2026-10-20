@@ -1,13 +1,40 @@
 #!/usr/bin/env node
-import { parseArgs } from "node:util";
+import { parseArgs, styleText } from "node:util";
 
 import { readYouTubeCookies } from "../src/chrome-cookies.mjs";
+import { confirm } from "../src/confirm.mjs";
 import { openWatchLater } from "../src/innertube.mjs";
 import {
   fisherYatesSample,
   moveSelectedVideos,
   validateCount,
 } from "../src/watch-later.mjs";
+
+const ALWAYS_ALLOW_WARNING = styleText(
+  ["bold", "red"],
+  `⚠️  Do not click Always Allow. If you do, any program on your Mac can read
+    this key without asking, and the key decrypts all your Chrome cookies.`,
+  { stream: process.stderr },
+);
+
+const KEYCHAIN_NOTICE = `wl-random needs your YouTube session from Chrome to access your
+Watch Later playlist. Chrome encrypts its cookies with a key that it keeps in
+the macOS Keychain. To read that key, wl-random runs the macOS "security"
+tool, so macOS will ask:
+
+  security wants to use your confidential information stored in
+  "Chrome Safe Storage" in your keychain.
+
+Enter your Mac login password and click Allow.
+
+${ALWAYS_ALLOW_WARNING}
+
+wl-random decrypts only the youtube.com cookies, sends them only to
+www.youtube.com, and does not save them.
+
+`;
+
+class Cancelled extends Error {}
 
 const HELP = `Usage: wl-random <count> [options]
 
@@ -18,6 +45,7 @@ Options:
   --dry-run          Load and sample the playlist, but move nothing
   --json             Print the outcome as JSON
   --profile <name>   Chrome profile directory (default: "Default")
+  -y, --yes          Do not ask before reading the Chrome key from the Keychain
   -h, --help         Show this help
 
 Examples:
@@ -27,8 +55,8 @@ Examples:
 
 Exit codes:
   0  success
-  1  error before any video moved
-  2  usage error
+  1  error or "no" answer before any video moved
+  2  usage error, or no terminal to ask in and no --yes
   3  stopped after a move failed; earlier moves were applied
 `;
 
@@ -40,6 +68,7 @@ function parseCli(argv) {
       "dry-run": { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       profile: { type: "string", default: "Default" },
+      yes: { type: "boolean", short: "y", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -57,6 +86,7 @@ function parseCli(argv) {
     dryRun: values["dry-run"],
     json: values.json,
     profile: values.profile,
+    yes: values.yes,
   };
 }
 
@@ -89,9 +119,20 @@ function printOutcome(outcome) {
   }
 }
 
+async function beforeKeychainRead(options) {
+  process.stderr.write(KEYCHAIN_NOTICE);
+
+  if (!options.yes && !(await confirm("Continue? [y/N] "))) {
+    throw new Cancelled();
+  }
+}
+
 async function run(options) {
   const client = await openWatchLater(
-    await readYouTubeCookies({ profile: options.profile }),
+    await readYouTubeCookies({
+      profile: options.profile,
+      beforeKeychainRead: () => beforeKeychainRead(options),
+    }),
   );
   const items = await client.loadPlaylist();
   const movable = new Map(
@@ -142,6 +183,14 @@ async function main() {
     return 0;
   }
 
+  if (!options.yes && !process.stdin.isTTY) {
+    console.error(
+      "error: wl-random asks before it reads the Chrome key, but stdin is not"
+        + " a terminal. Run it with --yes to skip the question.",
+    );
+    return 2;
+  }
+
   try {
     const outcome = await run(options);
 
@@ -153,7 +202,14 @@ async function main() {
 
     return outcome.failure ? 3 : 0;
   } catch (error) {
-    console.error(`error: ${error.message}`);
+    if (error instanceof Cancelled) {
+      console.error(
+        "Cancelled. wl-random did not read the Keychain or change your playlist.",
+      );
+    } else {
+      console.error(`error: ${error.message}`);
+    }
+
     return 1;
   }
 }
