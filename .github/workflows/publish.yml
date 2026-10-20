@@ -9,7 +9,11 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
   publish:
+    needs: test
     runs-on: ubuntu-latest
     # Each publish waits for approval in Settings > Environments > npm.
     environment: npm
@@ -30,7 +34,5 @@ jobs:
 
       - name: Check that the tag matches the package version
         run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
-
-      - run: npm test
 
       - run: npm stage publish
