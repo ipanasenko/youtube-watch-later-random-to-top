@@ -1,6 +1,6 @@
 {
   "name": "@ipanasenko/wl-random",
-  "version": "0.1.0",
+  "version": "0.0.0-development",
   "description": "Move random videos from your YouTube Watch Later playlist to the top",
   "keywords": [
     "youtube",
